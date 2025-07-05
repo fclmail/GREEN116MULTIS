@@ -284,7 +284,36 @@
       UNI: "0xb33EaAd8d922B1083446DC23f610c2567fB5180f"
     };
 
-    // Existing logic preserved
+    document.getElementById("connectWallet").onclick = async function () {
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+
+        const walletAddress = await signer.getAddress();
+        document.getElementById("wallet").textContent = walletAddress;
+
+        const usdcAbi = ["function balanceOf(address) view returns (uint256)", "function decimals() view returns (uint8)"];
+        const usdc = new ethers.Contract("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", usdcAbi, provider);
+        const [walletBalanceRaw, contractBalanceRaw, decimals] = await Promise.all([
+          usdc.balanceOf(walletAddress),
+          usdc.balanceOf(contractAddress),
+          usdc.decimals()
+        ]);
+
+        const walletBalance = (walletBalanceRaw / (10 ** decimals)).toFixed(4);
+        const contractBalance = (contractBalanceRaw / (10 ** decimals)).toFixed(4);
+
+        document.getElementById("walletBalance").textContent = walletBalance;
+        document.getElementById("contractBalance").textContent = contractBalance;
+
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+      } catch (err) {
+        console.error("Wallet connection failed:", err);
+        alert("Failed to connect wallet: " + err.message);
+      }
+    };
   </script>
 </body>
 </html>
+
